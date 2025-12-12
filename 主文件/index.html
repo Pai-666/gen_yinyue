@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>9个条状框架页面</title>
+    <style>
+        /* 全局样式重置 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* 主背景改为淡蓝色 */
+        body {
+            font-family: "Ma Shan Zheng", cursive;
+            background-color: #e6f7ff; /* 淡蓝色 */
+            padding: 40px 20px; /* 上下内边距加大，左右保留 */
+            min-height: 100vh;
+        }
+
+        /* 容器样式 - 适配响应式，加宽最大宽度 */
+        .frame-container {
+            max-width: 1500px; /* 进一步加宽容器 */
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 30px; /* 框架间距大幅加宽（原20px→30px） */
+            width: 100%;
+        }
+
+        /* 单个框架样式 - 加高+加宽，背景改为淡粉色 */
+        .frame-item {
+            background-color: #ffe6f2; /* 淡粉色 */
+            height: 120px; /* 框架高度大幅加高（原100px→120px） */
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px; /* 字体同步加大，视觉更协调 */
+            color: black;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.4s ease; /* 延长过渡时间，效果更顺滑 */
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+            width: 100%; /* 框架占满容器宽度 */
+            transform-origin: center;
+        }
+
+        /* 鼠标悬浮效果 - 强化 */
+        .frame-item:hover {
+            transform: translateY(-10px) scale(1.02); /* 上浮距离加大（8px→10px） */
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            background-color: #ffd9e8; /* 悬浮时淡粉色加深一点 */
+        }
+
+        /* 点击效果（:active伪类）- 强化 */
+        .frame-item:active {
+            transform: translateY(4px) scale(0.98); /* 下沉距离加大（3px→4px） */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* 滚动时框架渐入效果 - 强化动画 */
+        .frame-item {
+            opacity: 0;
+            transform: translateY(30px) scale(0.95);
+            animation: fadeIn 0.6s ease forwards;
+        }
+
+        /* 逐个延迟动画（新增第9个框架的延迟） */
+        .frame-item:nth-child(1) { animation-delay: 0.1s; }
+        .frame-item:nth-child(2) { animation-delay: 0.2s; }
+        .frame-item:nth-child(3) { animation-delay: 0.3s; }
+        .frame-item:nth-child(4) { animation-delay: 0.4s; }
+        .frame-item:nth-child(5) { animation-delay: 0.5s; }
+        .frame-item:nth-child(6) { animation-delay: 0.6s; }
+        .frame-item:nth-child(7) { animation-delay: 0.7s; }
+        .frame-item:nth-child(8) { animation-delay: 0.8s; } 
+        .frame-item:nth-child(9) { animation-delay: 0.9s; } /* 新增第9个框架的动画延迟 */
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* 响应式适配 - 调整宽高（同步加高） */
+        @media (max-width: 768px) {
+            .frame-item {
+                height: 100px; /* 平板端高度（原90px→100px） */
+                font-size: 32px;
+                gap: 25px; /* 平板端间距稍减 */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .frame-item {
+                height: 90px; /* 手机端高度（原80px→90px） */
+                font-size: 28px;
+                gap: 20px; /* 手机端间距进一步减 */
+            }
+            body {
+                padding: 20px 10px;
+            }
+        }
+    </style>
+    <!-- 引入在线草书字体（马善政） -->
+    <link href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 框架容器（新增第9个框架） -->
+    <div class="frame-container">
+        <a href="https://pai-666.github.io/gen_zhuye/" class="frame-item">这是主页，这里的音乐有惊喜！</a>
+        <a href="https://pai-666.github.io/gen_dianying/" class="frame-item">看会电影呗！</a>
+        <a href="#" class="frame-item">学累了就，听一首歌放松放松吧！</a>
+        <a href="#" class="frame-item">深夜了，快来追剧！</a>
+        <a href="#" class="frame-item">快来，这里是球球小世界！</a>
+        <a href="#" class="frame-item">这里有生日回忆录，快来这里！</a>
+        <a href="#" class="frame-item">快看，这里有你的幸运色回忆录！</a>
+        <a href="#" class="frame-item">专属美好瞬间合集，点开看看吧！</a>
+        <a href="#" class="frame-item">零碎的记忆与模糊的回忆交织，这里残存着你的回忆～</a> <!-- 新增第9个框架 -->
+    </div>
+
+    <script>
+        // 强化滚动交互效果：滚动时框架随滚动距离动态缩放+偏移
+        window.addEventListener('scroll', function() {
+            const scrollY = window.scrollY;
+            const frameItems = document.querySelectorAll('.frame-item');
+            
+            frameItems.forEach((item, index) => {
+                // 根据滚动距离和框架索引调整效果，每个框架效果略有差异
+                const scale = 1 - (scrollY / 8000) + (index * 0.005); // 缩放比例
+                const translateY = -10 + (scrollY / 200) - (index * 0.5); // 垂直偏移（同步上浮距离）
+                const opacity = 1 - (scrollY / 10000); // 透明度
+                
+                // 限制最小值，避免效果过度
+                const finalScale = scale > 0.93 ? scale : 0.93;
+                const finalOpacity = opacity > 0.85 ? opacity : 0.85;
+                
+                // 应用样式，保留悬浮的基础效果
+                item.style.transform = `translateY(${translateY}px) scale(${finalScale})`;
+                item.style.opacity = finalOpacity;
+                item.style.boxShadow = `0 ${8 - (scrollY / 200)}px ${20 - (scrollY / 100)}px rgba(0,0,0,${0.2 - (scrollY / 10000)})`;
+            });
+        });
+
+        // 点击事件增强（可自定义额外逻辑）
+        const frameItems = document.querySelectorAll('.frame-item');
+        frameItems.forEach((item, index) => {
+            item.addEventListener('click', function(e) {
+                // 如需阻止默认跳转可取消注释
+                // e.preventDefault();
+                console.log(`点击了网页${index + 1}，跳转链接：${this.href}`);
+                // 点击时添加短暂的高亮效果
+                this.style.backgroundColor = '#ffc2d8';
+                setTimeout(() => {
+                    this.style.backgroundColor = '#ffe6f2';
+                }, 300);
+            });
+        });
+    </script>
+</body>
+</html>

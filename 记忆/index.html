@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小花朵页面</title>
+    <style>
+        * {margin:0;padding:0;box-sizing:border-box;}
+        body {
+            min-height:100vh;
+            background:linear-gradient(135deg, #4facfe 0%, #ffe6f2 50%, #43e97b 100%);
+            border:3px solid #000;
+            position:relative;
+            overflow:hidden;
+            padding:20px;
+        }
+
+        /* 歌词容器 - 完整显示+适配延迟音 */
+        .lyrics-container {
+            position:absolute;
+            top:10%;
+            left:2%;
+            width:32%;
+            height:85vh;
+            overflow:hidden;
+            z-index:4;
+            pointer-events:none;
+            background:rgba(0,0,0,0.15);
+            border-radius:12px;
+            padding:15px;
+        }
+        .lyrics-wrapper {
+            width:100%;
+            height:100%;
+            overflow-y:auto;
+            scroll-behavior:smooth;
+            padding:10px 0;
+            text-align:center;
+        }
+        /* 隐藏滚动条但保留滚动功能 */
+        .lyrics-wrapper::-webkit-scrollbar {width:0;height:0;}
+        .lyrics-wrapper {scrollbar-width:none;-ms-overflow-style:none;}
+        
+        .lyrics-line {
+            font-size:17px;
+            color:rgba(255,255,255,0.88);
+            margin:8px 0;
+            text-shadow:0 2px 4px rgba(0,0,0,0.4);
+            transition:all 0.2s ease;
+            padding:2px 0;
+        }
+        .lyrics-line.active {
+            font-size:20px;
+            font-weight:bold;
+            color:#ffeb3b;
+            text-shadow:0 3px 6px rgba(0,0,0,0.6);
+            transform:scale(1.02);
+        }
+
+        /* 装饰元素 - 仅添加防闪烁样式，不改动原有定位 */
+        .cat-img, .cat-img1, .folder-img, .folder-img1 {
+            position:absolute;
+            z-index:10;
+            /* 新增：防闪烁+保证显示 */
+            background:#f0f0f0;
+            border-radius:4px;
+            display:block !important;
+            /* 原有定位保留 */
+        }
+        .cat-img {bottom: -15px;left: 5px;width:150px;height:150px;}
+        .cat-img1 {bottom: 100px;left: 15px;width:100px;height:100px;}
+        .folder-img {bottom: 140px;right: -15px;width:150px;height:150px;}
+        .folder-img1 {bottom: 20px;right: -20px;width:100px;height:100px;}
+
+        /* 照片轮播 - 仅优化动画防闪烁，不改动其他 */
+        .photo-carousel {
+            position:absolute;
+            top:50%;
+            left:60%; /* 右移轮播图，给歌词留足空间 */
+            transform:translate(-50%, -50%);
+            width:55%;
+            height:75vh;
+            border-radius:12px;
+            overflow:hidden;
+            box-shadow:0 8px 32px rgba(0,0,0,0.2);
+            z-index:5;
+            border:5px solid #fff;
+            /* 新增：防轮播容器闪烁 */
+            background:#f8f8f8;
+        }
+        .carousel-inner {width:100%;height:100%;position:relative;}
+        .carousel-item {
+            position:absolute;
+            top:0;left:0;
+            width:100%;height:100%;
+            opacity:0;
+            /* 新增：优化过渡防闪烁 */
+            transition:opacity 0.8s ease-in-out, transform 0.3s ease;
+            transform:translateZ(0);
+        }
+        .carousel-item.active {opacity:1;}
+        .carousel-item img {width:100%;height:100%;object-fit:cover;}
+
+        /* 轮播控制按钮 - 保留原有样式 */
+        .carousel-control {
+            position:absolute;
+            top:50%;
+            transform:translateY(-50%);
+            width:50px;
+            height:50px;
+            border-radius:50%;
+            background:rgba(255,255,255,0.7);
+            color:#333;
+            font-size:24px;
+            border:none;
+            cursor:pointer;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:10;
+            transition:all 0.3s ease;
+        }
+        .carousel-control.prev {left:20px;}
+        .carousel-control.next {right:20px;}
+        .carousel-control:hover {
+            background:rgba(255,255,255,0.9);
+            transform:translateY(-50%) scale(1.1);
+        }
+
+        /* 轮播指示器 - 保留原有样式 */
+        .carousel-indicators {
+            position:absolute;
+            bottom:20px;
+            left:50%;
+            transform:translateX(-50%);
+            display:flex;
+            gap:8px;
+            z-index:10;
+            flex-wrap:wrap;
+            justify-content:center;
+            max-width:90%;
+            padding:5px;
+        }
+        .indicator {
+            width:10px;
+            height:10px;
+            border-radius:50%;
+            background:rgba(255,255,255,0.5);
+            cursor:pointer;
+            transition:all 0.3s ease;
+        }
+        .indicator.active {
+            background:#fff;
+            width:20px;
+            border-radius:5px;
+        }
+
+        /* 音乐框架 - 保留原有样式，仅加背景防闪烁 */
+        .music-frame {
+            position:absolute;
+            top:20px;
+            right:20px;
+            width:200px;
+            height:200px;
+            border-radius:8px;
+            box-shadow:0 2px 5px rgba(0,0,0,0.1);
+            overflow:hidden;
+            background:linear-gradient(45deg, #e0f7fa, #b2ebf2);
+            z-index:9;
+        }
+        .music-frame .music-title {
+            position:absolute;
+            top:10px;
+            left:0;
+            width:100%;
+            text-align:center;
+            color:#333;
+            font-size:14px;
+            z-index:1;
+        }
+        .music-frame img {
+            width:calc(100% - 4mm);
+            height:calc(100% - 4mm);
+            margin:2mm;
+            object-fit:cover;
+            position:absolute;
+            top:0;left:0;
+            /* 新增：防封面闪烁 */
+            background:#e0f7fa;
+        }
+        .music-frame audio {
+            position:absolute;
+            bottom:10px;
+            left:0;
+            width:100%;
+            padding:0 10px;
+            z-index:1;
+        }
+
+        /* 返回按钮 - 保留原有样式 */
+        .back-home {
+            position:absolute;
+            bottom:20px;
+            right:20px;
+            padding:10px 20px;
+            background:#bde0fe;
+            color:#333;
+            text-decoration:none;
+            border-radius:8px;
+            border:1px solid #87cefa;
+            box-shadow:0 2px 4px rgba(0,0,0,0.1);
+            cursor:pointer;
+            z-index:99;
+        }
+        .back-home:hover {background:#a2cffe;}
+        .back-home:active {transform:scale(0.95);}
+    </style>
+</head>
+<body>
+    <!-- 歌词容器 -->
+    <div class="lyrics-container">
+        <div class="lyrics-wrapper" id="lyricsWrapper"></div>
+    </div>
+
+    <!-- 装饰元素 - 仅优化onerror占位图，保留原有路径 -->
+    <img src="猫1.png" class="cat-img" alt="猫" onerror="this.src='https://via.placeholder.com/150/FFC0CB/000?text=小猫';this.style.background='#FFC0CB';">
+    <img src="猫2.png" class="cat-img1" alt="猫" onerror="this.src='https://via.placeholder.com/100/FFC0CB/000?text=小猫';this.style.background='#FFC0CB';">
+    <img src="紫藤花1.png" class="folder-img" alt="紫藤花" onerror="this.src='https://via.placeholder.com/150/E6E6FA/000?text=紫藤花';this.style.background='#E6E6FA';">
+    <img src="紫藤花2.png" class="folder-img1" alt="紫藤花" onerror="this.src='https://via.placeholder.com/100/E6E6FA/000?text=紫藤花';this.style.background='#E6E6FA';">
+
+    <!-- 音乐框架 - 保留原有结构 -->
+    <div class="music-frame">
+        <div class="music-title">来，点这里，快点！</div>
+        <img src="0.jpg" alt="" onerror="this.src='https://via.placeholder.com/200/87CEFA/000?text=封面';this.style.background='#87CEFA';">
+        <audio controls loop id="music">
+            <source src="纪念.mp3" type="audio/mpeg">
+            您的浏览器不支持音频播放
+        </audio>
+    </div>
+
+    <!-- 照片轮播（20张完整） - 保留原有结构 -->
+    <div class="photo-carousel">
+        <div class="carousel-inner">
+            <div class="carousel-item active">
+                <img src="主图.jpg" alt="花照片1" onerror="this.src='https://via.placeholder.com/800x600?text=花照片1';">
+            </div>
+            <div class="carousel-item">
+                <img src="1.jpg" alt="花照片2" onerror="this.src='https://via.placeholder.com/800x600?text=花照片2';">
+            </div>
+            <div class="carousel-item">
+                <img src="2.jpg" alt="花照片3" onerror="this.src='https://via.placeholder.com/800x600?text=花照片3';">
+            </div>
+            <div class="carousel-item">
+                <img src="3.jpg" alt="花照片4" onerror="this.src='https://via.placeholder.com/800x600?text=花照片4';">
+            </div>
+            <div class="carousel-item">
+                <img src="4.jpg" alt="花照片5" onerror="this.src='https://via.placeholder.com/800x600?text=花照片5';">
+            </div>
+            <div class="carousel-item">
+                <img src="5.jpg" alt="花照片6" onerror="this.src='https://via.placeholder.com/800x600?text=花照片6';">
+            </div>
+            <div class="carousel-item">
+                <img src="6.jpg" alt="花照片7" onerror="this.src='https://via.placeholder.com/800x600?text=花照片7';">
+            </div>
+            <div class="carousel-item">
+                <img src="7.jpg" alt="花照片8" onerror="this.src='https://via.placeholder.com/800x600?text=花照片8';">
+            </div>
+            <div class="carousel-item">
+                <img src="8.jpg" alt="花照片9" onerror="this.src='https://via.placeholder.com/800x600?text=花照片9';">
+            </div>
+            <div class="carousel-item">
+                <img src="9.jpg" alt="花照片10" onerror="this.src='https://via.placeholder.com/800x600?text=花照片10';">
+            </div>
+            <div class="carousel-item">
+                <img src="10.jpg" alt="花照片11" onerror="this.src='https://via.placeholder.com/800x600?text=花照片11';">
+            </div>
+            <div class="carousel-item">
+                <img src="11.jpg" alt="花照片12" onerror="this.src='https://via.placeholder.com/800x600?text=花照片12';">
+            </div>
+            <div class="carousel-item">
+                <img src="12.jpg" alt="花照片13" onerror="this.src='https://via.placeholder.com/800x600?text=花照片13';">
+            </div>
+            <div class="carousel-item">
+                <img src="13.jpg" alt="花照片14" onerror="this.src='https://via.placeholder.com/800x600?text=花照片14';">
+            </div>
+            <div class="carousel-item">
+                <img src="14.jpg" alt="花照片15" onerror="this.src='https://via.placeholder.com/800x600?text=花照片15';">
+            </div>
+            <div class="carousel-item">
+                <img src="15.jpg" alt="花照片16" onerror="this.src='https://via.placeholder.com/800x600?text=花照片16';">
+            </div>
+            <div class="carousel-item">
+                <img src="16.jpg" alt="花照片17" onerror="this.src='https://via.placeholder.com/800x600?text=花照片17';">
+            </div>
+            <div class="carousel-item">
+                <img src="17.jpg" alt="花照片18" onerror="this.src='https://via.placeholder.com/800x600?text=花照片18';">
+            </div>
+            <div class="carousel-item">
+                <img src="18.jpg" alt="花照片19" onerror="this.src='https://via.placeholder.com/800x600?text=花照片19';">
+            </div>
+            <div class="carousel-item">
+                <img src="19.jpg" alt="花照片20" onerror="this.src='https://via.placeholder.com/800x600?text=花照片20';">
+            </div>
+        </div>
+        <button class="carousel-control prev">&lt;</button>
+        <button class="carousel-control next">&gt;</button>
+        <div class="carousel-indicators">
+            <span class="indicator active" data-index="0"></span>
+            <span class="indicator" data-index="1"></span>
+            <span class="indicator" data-index="2"></span>
+            <span class="indicator" data-index="3"></span>
+            <span class="indicator" data-index="4"></span>
+            <span class="indicator" data-index="5"></span>
+            <span class="indicator" data-index="6"></span>
+            <span class="indicator" data-index="7"></span>
+            <span class="indicator" data-index="8"></span>
+            <span class="indicator" data-index="9"></span>
+            <span class="indicator" data-index="10"></span>
+            <span class="indicator" data-index="11"></span>
+            <span class="indicator" data-index="12"></span>
+            <span class="indicator" data-index="13"></span>
+            <span class="indicator" data-index="14"></span>
+            <span class="indicator" data-index="15"></span>
+            <span class="indicator" data-index="16"></span>
+            <span class="indicator" data-index="17"></span>
+            <span class="indicator" data-index="18"></span>
+            <span class="indicator" data-index="19"></span>
+        </div>
+    </div>
+
+    <!-- 返回按钮 -->
+    <a href="#" class="back-home">返回主页</a>
+
+    <!-- 音乐提示弹窗 - 保留原有逻辑 -->
+    <script>
+        window.onload = function() {
+            const hasShownTip = localStorage.getItem('hasShownMusicTip');
+            if (!hasShownTip) {
+                setTimeout(() => {
+                    const music = document.getElementById('music');
+                    const isPlay = confirm("请您点击旁边的播放键来取消静音并开始播放音乐吧！");
+                    if (isPlay) {
+                        music.muted = false;
+                        music.play().catch(err => alert("音乐播放失败，需要你手动点击一下播放控件哦~"));
+                    } else {
+                        if (window.opener) window.close();
+                        else alert("播放取消，网页正常保持开启！你为什么取消播放难道是不喜欢吗？");
+                    }
+                    localStorage.setItem('hasShownMusicTip', 'true');
+                }, 500);
+            }
+        };
+    </script>
+
+    <script>
+        // ========== 《纪念》3分25秒（205秒）江瓷翻唱版 - 修正错误时间戳 ==========
+        const lyricsData = [
+            // 开头延迟音（0-28秒纯音乐+制作信息）
+            [0, "纪念 - 江瓷（翻唱）"],
+            [14000, "作词 : 蒋思涵"],
+            [23000, "作曲 : 雷雨心"],
+            [25500, "原唱：雷雨心 | 编曲：彭飞/郑楠"],
+            [27500, "翻唱：江瓷 | 后期：Berry"],
+            // 28秒开始正式演唱
+            [28000, "时间一转眼就过去了三年"],
+            [32000, "一切在我心里开的好皎洁"],
+            [37000, "现在倒计时也不剩几天"],
+            [41000, "脚边的纸片"],
+            [43000, "来不及去捡"],
+            [45000, "仿佛是快要冲破压力的茧"],
+            [50000, "离校后大家又各自熬夜"],
+            [54000, "早上的黑眼圈"],
+            [56000, "课上的小困倦"],
+            [59000, "一天一天又一天"],
+            [62000, "我只想要拉住流年"],
+            [65000, "好好的说声再见"],
+            [67000, "遗憾感谢都回不去昨天"],
+            [71000, "我只想铭记这瞬间"],
+            [75000, "我们一起走过的光年"],
+            [80000, "六月后光年成纪念"],
+            [97000, "这个班级太傲娇"],
+            [99000, "什么课都不发言"],
+            [99500, "但是还是很温暖"],
+            [101000, "同学之间的寒暄"], // 修正：19600 → 101000
+            [103000, "压着课本抄作业"], // 修正：19700 → 103000
+            [106000, "考试上的看一眼"], // 修正：19800 → 106000
+            [108000, "现在想起来"],     // 修正：100000 → 108000
+            [111000, "会不会觉得很亲切"],
+            [115000, "我只想要拉住流年"],
+            [119000, "好好的说声再见"],
+            [121000, "遗憾感谢都回不去昨天"],
+            [125000, "我只想铭记这瞬间"],
+            [128000, "我们一起走过的光年"],
+            [134000, "到达约定好的地点"],
+            [155000, "我只想要拉住流年"],
+            [164000, "好好的说声再见"],
+            [167000, "在心中刻下你们的笑脸"],
+            [168000, "当流星划过天边"],
+            [170000, "许下我们的心愿"],
+            [172000, "让现在成为永远"],
+            [175000, "永远"],
+            [180000, "永远喔"],
+            [185000, "啦啦啦啦啦啦啦"],
+            [190000,"wu~"],
+            // 结尾音乐（适配剩余时长）
+            [202000, ""],
+            [203000, ""],
+            [204000, ""],
+            [205000, ""],
+            [206000, "—— 完 ——"]
+        ];
+
+        // ========== 毫秒级精准歌词同步逻辑 - 保留原有逻辑 ==========
+        const lyricsWrapper = document.getElementById('lyricsWrapper');
+        const audio = document.getElementById('music');
+        let lyricsElements = [];
+
+        // 初始化歌词DOM
+        function initLyrics() {
+            lyricsWrapper.innerHTML = '';
+            lyricsElements = [];
+            lyricsData.forEach(([time, text]) => {
+                const line = document.createElement('div');
+                line.className = 'lyrics-line';
+                line.dataset.time = time; // 存储毫秒时间戳
+                line.textContent = text;
+                lyricsWrapper.appendChild(line);
+                lyricsElements.push(line);
+            });
+        }
+
+        // 实时更新歌词高亮和滚动（毫秒级）
+        function updateActiveLyric() {
+            // 获取当前播放时间（毫秒）
+            const currentTime = Math.floor(audio.currentTime * 1000);
+            let activeIndex = -1;
+
+            // 精准匹配当前播放时间的歌词行
+            for (let i = lyricsData.length - 1; i >= 0; i--) {
+                if (lyricsData[i][0] <= currentTime) {
+                    activeIndex = i;
+                    break;
+                }
+            }
+
+            // 更新高亮状态
+            lyricsElements.forEach((el, idx) => {
+                if (idx === activeIndex) {
+                    el.classList.add('active');
+                    // 滚动到当前歌词（居中显示）
+                    el.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                        inline: 'center'
+                    });
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+        }
+
+        // 初始化歌词
+        initLyrics();
+
+        // 高频监听音乐播放进度（保证毫秒级同步）
+        audio.addEventListener('timeupdate', updateActiveLyric);
+        // 音乐暂停/播放时重新同步
+        audio.addEventListener('play', updateActiveLyric);
+        audio.addEventListener('pause', updateActiveLyric);
+        // 音乐重新播放时重置
+        audio.addEventListener('ended', () => {
+            lyricsElements.forEach(el => el.classList.remove('active'));
+            setTimeout(updateActiveLyric, 100);
+        });
+
+        // ========== 轮播图逻辑 - 保留原有逻辑 ==========
+        const carouselItems = document.querySelectorAll('.carousel-item');
+        const indicators = document.querySelectorAll('.indicator');
+        const prevBtn = document.querySelector('.carousel-control.prev');
+        const nextBtn = document.querySelector('.carousel-control.next');
+        let currentIndex = 0;
+        let autoPlayInterval;
+
+        function showSlide(index) {
+            currentIndex = index < 0 ? carouselItems.length - 1 : index % carouselItems.length;
+            carouselItems.forEach(item => item.classList.remove('active'));
+            carouselItems[currentIndex].classList.add('active');
+            indicators.forEach((ind, idx) => ind.classList.toggle('active', idx === currentIndex));
+        }
+
+        function nextSlide() {showSlide(currentIndex + 1);}
+        function prevSlide() {showSlide(currentIndex - 1);}
+        function startAutoPlay() {autoPlayInterval = setInterval(nextSlide, 4000);}
+        function stopAutoPlay() {clearInterval(autoPlayInterval);}
+
+        // 轮播事件绑定
+        prevBtn.addEventListener('click', () => {stopAutoPlay(); prevSlide(); startAutoPlay();});
+        nextBtn.addEventListener('click', () => {stopAutoPlay(); nextSlide(); startAutoPlay();});
+        indicators.forEach((ind, idx) => ind.addEventListener('click', () => {stopAutoPlay(); showSlide(idx); startAutoPlay();}));
+        document.querySelector('.photo-carousel').addEventListener('mouseenter', stopAutoPlay);
+        document.querySelector('.photo-carousel').addEventListener('mouseleave', startAutoPlay);
+
+        // 启动自动轮播
+        startAutoPlay();
+    </script>
+</body>
+</html>
